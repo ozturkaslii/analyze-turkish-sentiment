@@ -1,0 +1,32 @@
+.chart-gauge {
+            width: 500px;
+            margin: 100px auto
+        }
+
+        .chart-first {
+            fill: #dc3545;
+        }
+
+        .chart-second {
+            fill: #28a745;
+        }
+
+        .needle, .needle-center {
+            fill: #000000;
+        }
+
+        .text {
+            color: #112864;
+            font-size: 16px;
+        }
+
+
+        svg {
+            font: 10px sans-serif;
+        }
+
+textarea.form-control {
+    height: auto;
+    padding: 10px;
+    margin-bottom: 10px;
+}

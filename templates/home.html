@@ -1,6 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" , href="{{ url_for('static', filename='gauge.css') }}">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+            integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+            crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+<body background="static/images/background.png">
+<div style="text-align: center;margin: 3.5%;">
+    <h4>Sentiment Analysis on Turkish Texts</h4>
+    <div class="row justify-content-center">
+        <div class="col-md-4" style="margin-top: 100px;">
 
-<h4>Sentiment Analysis on Turkish Texts</h4>
-<form>
-    <textarea rows=10 cols=100 name='text_input'></textarea><br>
-    <input type=submit>
-</form>
+            <form method="post">
+                <div class="form-group">
+                    <textarea class="form-control" rows="3" name="text_input"></textarea>
+                    <div class="text-right" style="margin-top: 10px;">
+                        <button type="submit" class="form-control col-md-3 btn btn-primary">Analyze</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4" style="margin-left: 10%;">
+            <div class="chart-gauge"></div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script type="text/javascript">
+    let name = '{{ text }}';
+    let value = '{{ result }}' * 100 | 0;
+    let gaugeMaxValue = 100;
+    let percentValue = value / gaugeMaxValue;
+    let needleClient;
+
+    (function () {
+        var barWidth, chart, chartInset, degToRad, repaintGauge,
+            height, margin, numSections, padRad, percToDeg, percToRad,
+            percent, radius, sectionIndx, svg, totalPercent, width;
+        percent = percentValue;
+        numSections = 1;
+        sectionPerc = 1 / numSections / 2;
+        padRad = 0.025;
+        chartInset = 10;
+        // Orientation of gauge:
+        totalPercent = .75;
+        el = d3.select('.chart-gauge');
+        margin = {
+            top: 20,
+            right: 20,
+            bottom: 30,
+            left: 20
+        };
+        width = el[0][0].offsetWidth - margin.left - margin.right;
+        height = width;
+        radius = Math.min(width, height) / 2;
+        barWidth = 40 * width / 300;
+
+        //Utility methods
+        percToDeg = function (perc) {
+            return perc * 360;
+        };
+        percToRad = function (perc) {
+            return degToRad(percToDeg(perc));
+        };
+        degToRad = function (deg) {
+            return deg * Math.PI / 180;
+        };
+        // Create SVG element
+        svg = el.append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom);
+
+        // Add layer for the panel
+        chart = svg.append('g').attr('transform', "translate(" + ((width + margin.left) / 2) + ", " + ((height + margin.top) / 2) + ")");
+        chart.append('path').attr('class', "arc chart-first");
+        chart.append('path').attr('class', "arc chart-second");
+
+        arc2 = d3.svg.arc().outerRadius(radius - chartInset).innerRadius(radius - chartInset - barWidth)
+        arc1 = d3.svg.arc().outerRadius(radius - chartInset).innerRadius(radius - chartInset - barWidth)
+
+        repaintGauge = function () {
+            perc = 0.5;
+            var next_start = totalPercent;
+            arcStartRad = percToRad(next_start);
+            arcEndRad = arcStartRad + percToRad(perc / 2);
+            next_start += perc / 2;
+            arc1.startAngle(arcStartRad).endAngle(arcEndRad);
+            arcStartRad = percToRad(next_start);
+            arcEndRad = arcStartRad + percToRad(perc / 2);
+            next_start += perc / 2;
+            arc2.startAngle(arcStartRad + padRad).endAngle(arcEndRad);
+            arcStartRad = percToRad(next_start);
+            arcEndRad = arcStartRad + percToRad(perc / 2);
+
+            chart.select(".chart-first").attr('d', arc1);
+            chart.select(".chart-second").attr('d', arc2);
+        }
+
+        let dataset = [{metric: name, value: value}]
+        let texts = svg.selectAll("text").data(dataset).enter();
+
+        texts.append("text")
+            .text(function () {
+                return dataset[0].metric;
+            })
+            .attr('id', "Name")
+            .attr('transform', "translate(" + ((width + margin.left) / 6) + ", " + ((height + margin.top) / 1.5) + ")")
+            .attr("font-size", 15)
+            .attr("font-style", "italic")
+            .style("fill", "#000000");
+
+        let calculation_trx = 180 - 210 * Math.cos(percToRad(percent / 2));
+        let trX = 0;
+        if(calculation_trx > 0 && calculation_trx < 455)
+            trX = 455;
+        let trY = 195 - 210 * Math.sin(percToRad(percent / 2));
+        // (180, 195) are the coordinates of the center of the gauge.
+
+        displayValue = function () {
+            texts.append("text")
+                .text(function () {
+                    return dataset[0].value + "%";
+                })
+                .attr('id', "Value")
+                .attr('transform', "translate(" + trX + ", " + trY + ")")
+                .attr("font-size", 18)
+                .style("fill", '#000000');
+        }
+
+        texts.append("text")
+            .text(function () {
+                return "Negative";
+            })
+            .attr('id', 'scale0')
+            .attr('transform', "translate(" + ((width + margin.left) / 25) + ", " + ((height + margin.top) / 2) + ")")
+            .attr("font-size", 15)
+            .style("fill", "#000000");
+
+        texts.append("text")
+            .text(function () {
+                return "Neutral";
+            })
+            .attr('id', 'scale10')
+            .attr('transform', "translate(" + ((width + margin.left) / 2.25) + ", " + ((height + margin.top) / 30) + ")")
+            .attr("font-size", 15)
+            .style("fill", "#000000");
+
+        texts.append("text")
+            .text(function () {
+                return "Positive";
+            })
+            .attr('id', 'scale20')
+            .attr('transform', "translate(" + ((width + margin.left) / 1.2) + ", " + ((height + margin.top) / 2) + ")")
+            .attr("font-size", 15)
+            .style("fill", "#000000");
+
+        var Needle = (function () {
+            //Helper function that returns the `d` value for moving the needle
+            var recalcPointerPos = function (perc) {
+                var centerX, centerY, leftX, leftY, rightX, rightY, thetaRad, topX, topY;
+                thetaRad = percToRad(perc / 2);
+                centerX = 0;
+                centerY = 0;
+                topX = centerX - this.len * Math.cos(thetaRad);
+                topY = centerY - this.len * Math.sin(thetaRad);
+                leftX = centerX - this.radius * Math.cos(thetaRad - Math.PI / 2);
+                leftY = centerY - this.radius * Math.sin(thetaRad - Math.PI / 2);
+                rightX = centerX - this.radius * Math.cos(thetaRad + Math.PI / 2);
+                rightY = centerY - this.radius * Math.sin(thetaRad + Math.PI / 2);
+
+                return "M " + leftX + " " + leftY + " L " + topX + " " + topY + " L " + rightX + " " + rightY;
+            };
+
+            function Needle(el) {
+                this.el = el;
+                this.len = width / 2.5;
+                this.radius = this.len / 8;
+            }
+
+            Needle.prototype.render = function () {
+                this.el.append('circle').attr('class', 'needle-center').attr('cx', 0).attr('cy', 0).attr('r', this.radius);
+                return this.el.append('path').attr('class', 'needle').attr('id', 'client-needle').attr('d', recalcPointerPos.call(this, 0));
+            };
+            Needle.prototype.moveTo = function (perc) {
+                let self, oldValue = this.perc || 0;
+                this.perc = perc;
+                self = this;
+
+                // Reset pointer position
+                this.el.transition().delay(100).ease('quad').duration(200).select('.needle').tween('reset-progress', function () {
+                    return function (percentOfPercent) {
+                        var progress = (1 - percentOfPercent) * oldValue;
+                        repaintGauge(progress);
+                        return d3.select(this).attr('d', recalcPointerPos.call(self, progress));
+                    };
+                });
+
+                this.el.transition().delay(300).ease('bounce').duration(1500).select('.needle').tween('progress', function () {
+                    return function (percentOfPercent) {
+                        var progress = percentOfPercent * perc;
+
+                        repaintGauge(progress);
+                        return d3.select(this).attr('d', recalcPointerPos.call(self, progress));
+                    };
+                });
+            };
+            return Needle;
+        })();
+
+        needle = new Needle(chart);
+        needle.render();
+        needle.moveTo(percent);
+
+        setTimeout(displayValue, 1350);
+    })();
+</script>

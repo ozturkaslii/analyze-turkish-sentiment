@@ -30,20 +30,14 @@ def predict(texts):
 	return prediction
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
-	returning_html = ''
-	in_text = request.args.get('text_input')
+	in_text = request.values.get('text_input')
 	arr = [in_text]
 	# if input is provided process else show default page
-	if in_text is not None:
-		returning_html += in_text
+	if request.method == 'POST':
 		result = predict(arr)
-		if result > 0.5:
-			returning_html += '<h4> Positive Sentiment :)</h4><br>'
-		else:
-			returning_html += '<h4> Negative Sentiment :(</h4><br>'
-		return returning_html
+		return render_template('home.html', result=result, text=in_text)
 	else:
 		return render_template('home.html')
 
