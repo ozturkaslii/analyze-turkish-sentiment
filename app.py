@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import tensorflow as tf
+import pickle
 from keras.models import load_model
 from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing.sequence import pad_sequences
@@ -16,14 +17,12 @@ nlp_model = load_model('lstm_nlp1.h5')
 global graph
 graph = tf.get_default_graph()
 
-dataset = pd.read_csv('ecommercereviews.csv')
-data = dataset['Review'].values.tolist()
-
+# load tokenizer
+with open('turkish_tokenizer.pickle', 'rb') as handle:
+    turkish_tokenizer = pickle.load(handle)
 
 def predict(texts):
-	tokenizer = Tokenizer(num_words=10000)
-	tokenizer.fit_on_texts(data)
-	tokens = tokenizer.texts_to_sequences(texts)
+	tokens = turkish_tokenizer.texts_to_sequences(texts)
 	tokens_pad = pad_sequences(tokens, maxlen=59)
 	with graph.as_default():
 		prediction = nlp_model.predict(tokens_pad)[0][0]
